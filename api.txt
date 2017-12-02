@@ -1,0 +1,119 @@
+  private readonly RegistrationContext _context;
+
+        public CourseController(RegistrationContext context)
+        {
+            _context = context;
+        }
+
+
+        // GET: api/values
+        [HttpGet]
+        public IEnumerable<Course.Models.Course> Get()
+        {
+            return _context.Course.ToList();
+        }
+
+        // GET api/values/5
+        [HttpGet("{id}")]
+        public IActionResult Get(int id)
+        {
+            var item = _context.Course.FirstOrDefault(t => t.CourseId == id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+            return new ObjectResult(item);
+        }
+
+        // POST api/values
+        [HttpPost]
+        public IActionResult Post([FromBody]Course.Models.Course item)
+        {
+            if (item == null)
+            {
+                return BadRequest();
+            }
+
+            _context.Course.Add(item);
+            _context.SaveChanges();
+
+            return new ObjectResult(item);
+        }
+
+        // PUT api/values/5
+        [HttpPut("{id}")]
+        public string Put(int id, [FromBody]Course.Models.Course item)
+        {
+            if (item == null || item.CourseId != id )
+            {
+                return "empty";
+            }
+
+            var course = _context.Course.FirstOrDefault(t => t.CourseId == id);
+            if (course == null)
+            {
+                return "empty";
+            }
+
+            course.CourseName = item.CourseName;
+            course.StartDate = item.StartDate;
+            course.EndDate = item.EndDate;
+
+            _context.Course.Update(item);
+            _context.SaveChanges();
+            return "done";
+
+        }
+
+        // DELETE api/values/5
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var course = _context.Course.FirstOrDefault(t => t.CourseId == id);
+            if (course == null)
+            {
+                return NotFound();
+            }
+
+            _context.Course.Remove(course);
+            _context.SaveChanges();
+            return new NoContentResult();
+
+        }
+
+
+
+
+
+
+
+ public ActionResult Index()
+        {
+            IEnumerable<Course> courses = null;
+
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri("http://localhost:60111/api/");
+                //http GET
+                var responseTask = client.GetAsync("Course");
+                responseTask.Wait();
+
+                var result = responseTask.Result;//connection code 200 ,meaning response from server
+                if (result.IsSuccessStatusCode)
+                {
+                    var readTask = result.Content.ReadAsAsync<IList<Course>>();
+                    readTask.Wait();
+
+                    courses = readTask.Result;
+                }
+                else //web api sent error response
+                {
+                    //log response status here..
+
+                    courses = Enumerable.Empty<Course>();
+
+                    ModelState.AddModelError(string.Empty, "Server error. Please contact administrator.");
+                }
+            }
+            return View(courses);
+        }
